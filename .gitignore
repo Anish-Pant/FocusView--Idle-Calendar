@@ -1,0 +1,19 @@
+
+# These files contain private keys and user access tokens.
+# NEVER commit them to a public repository.
+
+credentials.json
+token.json
+
+# --- Python Virtual Environment ---
+# This folder is specific to  machine and can be very large.
+.venv/
+venv/
+
+# --- Python Cache ---
+__pycache__/
+*.pyc
+
+# --- IDE/Editor specific files ---
+.vscode/
+.idea/

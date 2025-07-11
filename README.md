@@ -1,6 +1,6 @@
 # FocusView-IdleCalendar
 
-Take a quick break, stretch, or look away — and FocusView fades in with your upcoming events. It’s a gentle nudge to keep you in sync with your day. Move your mouse or press a key, and it fades out until next time.
+Take a quick break, stretch, or look away — and FocusView fades in with your upcoming tasks from Google Calendar. It’s a gentle nudge to keep you in sync with your day. Move your mouse or press a key, and it fades out until next time.
 
 This is a complete rebuild of my earlier project that controlled the Google Calendar PWA. This new version is a native desktop app with a much cleaner look, using the Google Calendar API for a more seamless experience.
 

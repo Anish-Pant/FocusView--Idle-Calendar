@@ -1,0 +1,3 @@
+pip freeze > requirements.txt```
+
+This will automatically generate a `requirements.txt` file with the exact versions of all the packages you have installed.
