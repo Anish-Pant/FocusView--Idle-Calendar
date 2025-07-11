@@ -1,4 +1,3 @@
-# main.py (Modified for Event-Driven Hiding)
 
 import sys
 from PyQt6.QtWidgets import QApplication
