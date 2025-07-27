@@ -23,7 +23,7 @@ First, get the code and install the necessary libraries. I recommend using a vir
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/Anish-Pant/FocusView--Idle-Calendar
 cd IdleCalendar
 
 # Set up and activate a virtual environment
