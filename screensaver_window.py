@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QPainter, QPixmap
 
+
 class ScreensaverWindow(QWidget):
     activity_detected = pyqtSignal()
 
@@ -80,7 +81,6 @@ class ScreensaverWindow(QWidget):
         right_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         agenda_title = QLabel("LATER TODAY")
         agenda_title.setObjectName("titleLabel")
-        # Add drop shadow effect
         from PyQt6.QtWidgets import QGraphicsDropShadowEffect
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(16)
@@ -106,10 +106,40 @@ class ScreensaverWindow(QWidget):
         self.clock_timer.start(1000)
         self.update_time_and_date()
 
+    # --- Event Handlers ---
+    def keyPressEvent(self, event):
+        """Ignore Alt key so it can be used for menu actions."""
+        key = event.key()
+        if key in (Qt.Key.Key_Alt, Qt.Key.Key_AltGr):
+            event.accept()
+            return
+        # all other keys count as activity
+        self.activity_detected.emit()
+        super().keyPressEvent(event)
+
+    def mousePressEvent(self, event):
+        """Ignore right-clicks to allow context menu."""
+        if event.button() == Qt.MouseButton.RightButton:
+            event.accept()
+            return
+        # Left and middle clicks count as activity
+        self.activity_detected.emit()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Mouse movement still counts as activity."""
+        self.activity_detected.emit()
+        super().mouseMoveEvent(event)
+
+    # --- Painting & Layout ---
     def paintEvent(self, event):
         if self.background_pixmap:
             painter = QPainter(self)
-            scaled_pixmap = self.background_pixmap.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = self.background_pixmap.scaled(
+                self.size(),
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                Qt.TransformationMode.SmoothTransformation
+            )
             point = self.rect().center() - scaled_pixmap.rect().center()
             painter.drawPixmap(point, scaled_pixmap)
         super().paintEvent(event)
@@ -120,16 +150,12 @@ class ScreensaverWindow(QWidget):
         y = self.height() - self.idle_timer_label.height() - 20
         self.idle_timer_label.move(x, y)
 
-    def keyPressEvent(self, event): self.activity_detected.emit(); super().keyPressEvent(event)
-    def mouseMoveEvent(self, event): self.activity_detected.emit(); super().mouseMoveEvent(event)
-    def mousePressEvent(self, event): self.activity_detected.emit(); super().mousePressEvent(event)
-
+    # --- UI Updates ---
     def apply_styles(self):
         font_family = "'Segoe UI', 'Helvetica', sans-serif"
         self.setStyleSheet(f"""
-            /* ### IMPROVED GLASS EFFECT ### */
             #glassCard, .agendaCard {{
-                background-color: rgba(0, 0, 0, 0.35); /* More opaque for better contrast */
+                background-color: rgba(0, 0, 0, 0.35);
                 border: 1px solid rgba(255, 255, 255, 0.18);
                 border-radius: 12px;
                 padding: 15px;
@@ -141,17 +167,14 @@ class ScreensaverWindow(QWidget):
                 border: none;
                 padding: 0;
             }}
-            
-
             #clockLabel {{
                 font-size: 220px; 
                 font-weight: 400;
-                padding-top: 0;
-                padding-bottom: 0;
             }}
-            #dateLabel {{ font-size: 36px; font-weight: 400; }}
-            
-            
+            #dateLabel {{
+                font-size: 36px;
+                font-weight: 400;
+            }}
             #titleLabel {{
                 font-size: 32px;
                 font-weight: 700; 
@@ -194,9 +217,10 @@ class ScreensaverWindow(QWidget):
         self.idle_timer_label.adjustSize()
 
     def update_events(self, events):
-        for i in reversed(range(self.agenda_items_layout.count())): 
+        for i in reversed(range(self.agenda_items_layout.count())):
             item = self.agenda_items_layout.takeAt(i)
-            if item.widget(): item.widget().deleteLater()
+            if item.widget():
+                item.widget().deleteLater()
 
         if not events:
             self.next_event_summary_label.setText("No upcoming events")
@@ -216,10 +240,11 @@ class ScreensaverWindow(QWidget):
         for event in agenda_events:
             card = self._create_agenda_card(event)
             self.agenda_items_layout.addWidget(card)
-            
+
         self.style().unpolish(self)
         self.style().polish(self)
 
+    # --- Helper Functions ---
     def format_idle_time(self, total_seconds):
         total_seconds = int(total_seconds)
         if total_seconds < 60:
@@ -230,16 +255,22 @@ class ScreensaverWindow(QWidget):
     def format_relative_time(self, dt_event):
         now = datetime.datetime.now().astimezone()
         delta = dt_event - now
-        if delta.total_seconds() <= 1: return "starts now", "high"
+        if delta.total_seconds() <= 1:
+            return "starts now", "high"
         days, hours, minutes = delta.days, int(delta.total_seconds() / 3600) % 24, int(delta.total_seconds() / 60) % 60
-        if days > 1: return f"in {days} days", "low"
-        if days == 1: return "in 1 day", "low"
-        if hours > 0: return f"in {hours}h {minutes}m", "medium"
+        if days > 1:
+            return f"in {days} days", "low"
+        if days == 1:
+            return "in 1 day", "low"
+        if hours > 0:
+            return f"in {hours}h {minutes}m", "medium"
         return f"in {minutes} minutes", "high"
 
     def format_event_time(self, time_str):
         try:
-            if 'T' not in time_str: return "All Day"
+            if 'T' not in time_str:
+                return "All Day"
             dt = datetime.datetime.fromisoformat(time_str).astimezone()
             return dt.strftime("%I:%M %p")
-        except (ValueError, TypeError): return ""
+        except (ValueError, TypeError):
+            return ""
