@@ -12,6 +12,10 @@ This is a complete rebuild of my earlier project that controlled the Google Cale
 *   **Knows When You're Idle:** Pops up automatically after a set time of inactivity.
 *   **Connects to Google Calendar:** Pulls your schedule directly from the source.
 *   **Gets Out of Your Way:** Vanishes the second you touch your mouse or keyboard.
+*   **Now Smarter with Snooze & Postpone** —
+    Right-click (or press Alt) to open an options menu where you can:
+    Snooze the overlay for 5, 10, or 15 minutes
+    Postpone it until your next calendar event
 
 ## Setup
 
