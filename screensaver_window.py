@@ -79,7 +79,7 @@ class ScreensaverWindow(QWidget):
         right_panel_layout = QVBoxLayout()
         right_panel_layout.setSpacing(15)
         right_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        agenda_title = QLabel("LATER TODAY")
+        agenda_title = QLabel("UPCOMING EVENTS")
         agenda_title.setObjectName("titleLabel")
         from PyQt6.QtWidgets import QGraphicsDropShadowEffect
         shadow = QGraphicsDropShadowEffect()
@@ -95,8 +95,28 @@ class ScreensaverWindow(QWidget):
         right_panel_layout.addWidget(agenda_items_widget)
         right_panel_layout.addStretch()
 
+        # Far Right panel (tasks)
+        tasks_panel_layout = QVBoxLayout()
+        tasks_panel_layout.setSpacing(15)
+        tasks_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        tasks_title = QLabel("TODAY'S TASKS")
+        tasks_title.setObjectName("titleLabel")
+        shadow2 = QGraphicsDropShadowEffect()
+        shadow2.setBlurRadius(16)
+        shadow2.setOffset(0, 2)
+        shadow2.setColor(Qt.GlobalColor.black)
+        tasks_title.setGraphicsEffect(shadow2)
+        tasks_panel_layout.addWidget(tasks_title, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.tasks_items_layout = QVBoxLayout()
+        self.tasks_items_layout.setSpacing(10)
+        tasks_items_widget = QWidget()
+        tasks_items_widget.setLayout(self.tasks_items_layout)
+        tasks_panel_layout.addWidget(tasks_items_widget)
+        tasks_panel_layout.addStretch()
+
         # Add panels to main content
         main_content_layout.addLayout(left_panel_layout, 2)
+        main_content_layout.addLayout(tasks_panel_layout, 1)
         main_content_layout.addLayout(right_panel_layout, 1)
 
         # --- Apply Styles & Timers ---
@@ -244,13 +264,68 @@ class ScreensaverWindow(QWidget):
         self.style().unpolish(self)
         self.style().polish(self)
 
+    def _create_task_card(self, task):
+        card = QFrame()
+        card.setProperty("class", "agendaCard")
+        layout = QVBoxLayout(card)
+        layout.setSpacing(4)
+        layout.setContentsMargins(12, 10, 12, 10)
+        title_label = QLabel(task['title'])
+        title_label.setProperty("class", "agendaSummary")
+        title_label.setWordWrap(True)
+        
+        due = task.get('due')
+        if due:
+            try:
+                due_dt = datetime.datetime.fromisoformat(due.replace('Z', '+00:00')).astimezone()
+                time_str = "Due: " + due_dt.strftime("%b %d")
+            except (ValueError, TypeError):
+                time_str = "Due today"
+        else:
+            time_str = "No due date"
+            
+        time_label = QLabel(time_str)
+        time_label.setProperty("class", "agendaTime")
+        layout.addWidget(title_label)
+        layout.addWidget(time_label)
+        return card
+
+    def update_tasks(self, grouped_tasks):
+        for i in reversed(range(self.tasks_items_layout.count())):
+            item = self.tasks_items_layout.takeAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+
+        if not grouped_tasks:
+            no_tasks_label = QLabel("No tasks for today")
+            no_tasks_label.setProperty("class", "agendaTime")
+            self.tasks_items_layout.addWidget(no_tasks_label)
+            self.style().unpolish(self)
+            self.style().polish(self)
+            return
+
+        for group in grouped_tasks:
+            # Add list title header
+            header = QLabel(group['list_title'].upper())
+            header.setStyleSheet("font-size: 18px; font-weight: 700; color: #E0E0E0; padding-top: 10px; padding-bottom: 2px; letter-spacing: 1px;")
+            self.tasks_items_layout.addWidget(header)
+            
+            # Show up to 5 tasks per list
+            for task in group['tasks'][:5]:
+                card = self._create_task_card(task)
+                self.tasks_items_layout.addWidget(card)
+
+        self.style().unpolish(self)
+        self.style().polish(self)
+
     # --- Helper Functions ---
     def format_idle_time(self, total_seconds):
         total_seconds = int(total_seconds)
         if total_seconds < 60:
             return f"Away for {total_seconds} seconds"
         minutes = total_seconds // 60
-        return f"Away for {minutes} minutes"
+        seconds = total_seconds % 60
+        return f"Away for {minutes}m {seconds}s"
 
     def format_relative_time(self, dt_event):
         now = datetime.datetime.now().astimezone()

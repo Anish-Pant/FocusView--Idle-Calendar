@@ -5,13 +5,14 @@ import time
 import webbrowser
 from PyQt6.QtWidgets import QApplication, QMenu
 from PyQt6.QtCore import QTimer, Qt, QObject, QEvent
+from PyQt6.QtGui import QCursor
 
 import idle_monitor
 import calendar_service
 from screensaver_window import ScreensaverWindow
 
 IDLE_THRESHOLD_SECONDS = 10
-CHECK_INTERVAL_SECONDS = 2
+CHECK_INTERVAL_SECONDS = 1
 
 # --- Global State Flags ---
 snooze_until = 0
@@ -35,18 +36,13 @@ class ActivityFilter(QObject):
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
             # Set a short grace period so the idle checker doesn't hide immediately.
             self.controller.ignore_activity_until = time.time() + 3.0
-            # Show context menu using the event's global position
-            try:
-                self.controller.show_context_menu(event)
-            except Exception:
-                # fallback: show centered if something goes wrong
-                self.controller.show_context_menu_at_center()
+            self.controller.show_context_menu_at_cursor()
             return True  # stop further processing (prevents activity hide)
 
-        # Alt key pressed: show context menu centered and prevent hide.
+        # Alt key pressed: show context menu at the pointer and prevent hide.
         if event.type() == QEvent.Type.KeyPress and event.key() in (Qt.Key.Key_Alt, Qt.Key.Key_AltGr):
             self.controller.ignore_activity_until = time.time() + 3.0
-            self.controller.show_context_menu_at_center()
+            self.controller.show_context_menu_at_cursor()
             return True  # stop further processing
 
         return False  # other events are processed normally
@@ -120,21 +116,15 @@ class AppController:
         self.current_events = events
         self.window.update_events(events)
 
+        print("Fetching today's tasks...")
+        tasks = calendar_service.get_today_tasks()
+        self.window.update_tasks(tasks)
+
     # --- Context Menu Logic ---
-    def show_context_menu(self, event_or_qt_event):
-        """
-        Accept either the QContextMenuEvent-like object from the filter (it has globalPos())
-        or a QEvent passed explicitly. We'll extract globalPos() if available.
-        """
+    def show_context_menu_at_cursor(self):
+        """Show the context menu at the current global mouse cursor position."""
         global snooze_until, postpone_until_next_event, session_closed
 
-        pos = None
-        try:
-            # event may be a Qt event object with globalPos()
-            pos = event_or_qt_event.globalPos()
-        except Exception:
-            pos = None
-
         menu = QMenu(self.window)
         menu.addAction("Snooze 5 min", lambda: self.snooze_overlay(5))
         menu.addAction("Snooze 10 min", lambda: self.snooze_overlay(10))
@@ -146,34 +136,7 @@ class AppController:
         menu.addSeparator()
         menu.addAction("Close overlay for session", self.close_for_session)
 
-        # If we have a global pos, use it; otherwise show centered on window
-        if pos:
-            menu.exec(pos)
-        else:
-            self.show_menu_centered(menu)
-
-    def show_context_menu_at_center(self):
-        """Helper to show a context menu centered within the screensaver window."""
-        menu = QMenu(self.window)
-        menu.addAction("Snooze 5 min", lambda: self.snooze_overlay(5))
-        menu.addAction("Snooze 10 min", lambda: self.snooze_overlay(10))
-        menu.addAction("Snooze 15 min", lambda: self.snooze_overlay(15))
-        menu.addSeparator()
-        menu.addAction("Postpone until next event", self.postpone_overlay)
-        menu.addAction("Mark current event as done", self.mark_done)
-        menu.addAction("Open in Google Calendar", self.open_calendar)
-        menu.addSeparator()
-        menu.addAction("Close overlay for session", self.close_for_session)
-        self.show_menu_centered(menu)
-
-    def show_menu_centered(self, menu: QMenu):
-        """Exec the menu centered inside the window."""
-        try:
-            center_point = self.window.mapToGlobal(self.window.rect().center())
-            menu.exec(center_point)
-        except Exception:
-            # last resort: exec without a position
-            menu.exec()
+        menu.exec(QCursor.pos())
 
     def snooze_overlay(self, minutes):
         global snooze_until

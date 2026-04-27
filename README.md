@@ -4,7 +4,7 @@ Take a quick break, stretch, or look away — and FocusView fades in with your u
 
 This is a complete rebuild of my earlier project that controlled the Google Calendar PWA. This new version is a native desktop app with a much cleaner look, using the Google Calendar API for a more seamless experience.
 
-
+![GUI of the app](gui.jpg)
 
 ### What it does:
 

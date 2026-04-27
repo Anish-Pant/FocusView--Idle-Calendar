@@ -2,8 +2,11 @@ import os
 import sys
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-# This scope allows read-only access to the user's calendar.
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+# These scopes allow read-only access to the user's calendar and tasks.
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/tasks.readonly'
+]
 CREDENTIALS_FILE = 'credentials.json'
 TOKEN_FILE = 'token.json'
 
